@@ -1,0 +1,180 @@
+// This is your Prisma schema file for The Holy Company Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(uuid())
+  clerkId         String    @unique @map("clerk_id")
+  email           String    @unique
+  firstName       String?   @map("first_name")
+  lastName        String?   @map("last_name")
+  role            String    @default("USER") // USER or ADMIN
+  punyaBalance    Int       @default(0) @map("punya_balance")
+  currentStreak   Int       @default(0) @map("current_streak")
+  longestStreak   Int       @default(0) @map("longest_streak")
+  lastPujaDate    DateTime? @map("last_puja_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  pujas           Puja[]
+  userGames       UserGame[]
+  offerings       Offering[]
+  blessings       BlessingCard[]
+
+  @@map("users")
+}
+
+model Puja {
+  id                  String   @id @default(uuid())
+  userId              String   @map("user_id")
+  deityName           String   @map("deity_name")
+  stepsCompleted      String   @map("steps_completed") // JSON array of step IDs
+  gesturesPerformed   String   @map("gestures_performed") // JSON array of gesture types
+  punyaEarned         Int      @map("punya_earned")
+  offeringAmount      Int?     @map("offering_amount")
+  duration            Int?     // Duration in seconds
+  completedAt         DateTime @default(now()) @map("completed_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offerings           Offering[]
+  blessings           BlessingCard[]
+
+  @@index([userId, completedAt])
+  @@map("pujas")
+}
+
+model Game {
+  id            String @id @default(uuid())
+  title         String
+  description   String
+  type          String // catch, aim, sort, lift, etc.
+  deityName     String @map("deity_name")
+  requiredPunya Int    @default(111) @map("required_punya")
+  controls      String // JSON object with control instructions
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  userGames     UserGame[]
+
+  @@map("games")
+}
+
+model UserGame {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  gameId       String    @map("game_id")
+  highScore    Int       @default(0) @map("high_score")
+  timesPlayed  Int       @default(0) @map("times_played")
+  lastPlayed   DateTime  @default(now()) @map("last_played")
+  unlockedAt   DateTime  @default(now()) @map("unlocked_at")
+
+  // Relations
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game         Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([userId])
+  @@map("user_games")
+}
+
+model Offering {
+  id                  String    @id @default(uuid())
+  userId              String    @map("user_id")
+  pujaId              String?   @map("puja_id")
+  deityName           String    @map("deity_name")
+  amount              Int
+  status              String    @default("PENDING") // PENDING, COMPLETED, FAILED
+  paymentMethod       String    @default("CASHFREE") @map("payment_method")
+  paymentOrderId      String?   @map("payment_order_id")
+  paymentSessionId    String?   @map("payment_session_id")
+  paymentCompletedAt  DateTime? @map("payment_completed_at")
+  paymentDetails      String?   @map("payment_details") // JSON
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  puja                Puja?     @relation(fields: [pujaId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("offerings")
+}
+
+model Content {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  content     String   // HTML content
+  type        String   // article, video, audio, image
+  category    String   // festivals, rituals, stories, philosophy, etc.
+  imageUrl    String?  @map("image_url")
+  videoUrl    String?  @map("video_url")
+  audioUrl    String?  @map("audio_url")
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  views       ContentView[]
+  likes       ContentLike[]
+
+  @@index([type])
+  @@index([category])
+  @@index([featured])
+  @@map("content")
+}
+
+model ContentView {
+  id        String   @id @default(uuid())
+  contentId String   @map("content_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, userId])
+  @@index([contentId])
+  @@map("content_views")
+}
+
+model ContentLike {
+  id        String   @id @default(uuid())
+  contentId String   @map("content_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, userId])
+  @@index([contentId])
+  @@map("content_likes")
+}
+
+model BlessingCard {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  pujaId    String?   @map("puja_id")
+  deityName String    @map("deity_name")
+  message   String
+  imageUrl  String    @map("image_url")
+  isSpecial Boolean   @default(false) @map("is_special")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  puja      Puja?     @relation(fields: [pujaId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("blessing_cards")
+}

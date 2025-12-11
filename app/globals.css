@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+@layer base {
+  body {
+    @apply font-crimson bg-cream text-deep-brown antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-playfair;
+  }
+
+  /* Prevent iOS zoom on input focus */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Custom scrollbar */
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Safe area insets for iOS */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Touch target sizes */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Gradient backgrounds */
+  .gradient-gold {
+    background: linear-gradient(135deg, #D4AF37 0%, #F4E4C1 100%);
+  }
+
+  .gradient-temple {
+    background: linear-gradient(135deg, #5D4037 0%, #8D6E63 100%);
+  }
+
+  .gradient-saffron {
+    background: linear-gradient(135deg, #FF6F00 0%, #FFA000 100%);
+  }
+
+  /* Glow effects */
+  .glow-gold {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3),
+                0 0 40px rgba(212, 175, 55, 0.2),
+                0 0 60px rgba(212, 175, 55, 0.1);
+  }
+
+  .glow-saffron {
+    box-shadow: 0 0 20px rgba(255, 111, 0, 0.3),
+                0 0 40px rgba(255, 111, 0, 0.2),
+                0 0 60px rgba(255, 111, 0, 0.1);
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white rounded-lg shadow-md p-4;
+  }
+
+  .card-elevated {
+    @apply bg-white rounded-xl shadow-lg p-6;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply bg-auspicious-saffron text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 touch-target;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-temple-brown font-semibold py-3 px-6 rounded-lg border-2 border-temple-brown hover:bg-temple-brown hover:text-white active:scale-95 transition-all duration-200 touch-target;
+  }
+
+  .btn-gold {
+    @apply bg-sacred-gold text-deep-brown font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 touch-target;
+  }
+
+  /* Loading animation */
+  .loading-spinner {
+    border: 3px solid rgba(212, 175, 55, 0.3);
+    border-top-color: #D4AF37;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Fade in animation */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Pulse animation for streaks */
+  .pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(255, 111, 0, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(255, 111, 0, 0.6),
+                  0 0 30px rgba(255, 111, 0, 0.4);
+    }
+  }
+
+  /* Shake animation for gestures */
+  .shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-10px);
+    }
+    75% {
+      transform: translateX(10px);
+    }
+  }
+}
+
+/* Game canvas styling */
+canvas {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Disable tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom selection color */
+::selection {
+  background-color: rgba(212, 175, 55, 0.3);
+  color: #3E2723;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+/* Bottom navigation safe area */
+.bottom-nav {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+}

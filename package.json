@@ -1,0 +1,52 @@
+{
+  "name": "holy-company-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^5.0.0",
+    "@prisma/client": "^5.8.0",
+    "@vercel/blob": "^0.19.0",
+    "@vercel/postgres": "^0.5.0",
+    "framer-motion": "^10.16.16",
+    "howler": "^2.2.4",
+    "zustand": "^4.4.7",
+    "react-canvas-confetti": "^2.0.7",
+    "lucide-react": "^0.303.0",
+    "date-fns": "^3.0.6",
+    "sharp": "^0.33.1",
+    "canvas": "^2.11.2",
+    "pdfkit": "^0.14.0",
+    "recharts": "^2.10.3",
+    "react-quill": "^2.0.0",
+    "next": "14.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sib-api-v3-sdk": "^8.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "@types/react": "^18.2.46",
+    "@types/react-dom": "^18.2.18",
+    "@types/howler": "^2.2.11",
+    "@types/pdfkit": "^0.13.4",
+    "prisma": "^5.8.0",
+    "typescript": "^5.3.3",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.32",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "14.1.0"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  }
+}
