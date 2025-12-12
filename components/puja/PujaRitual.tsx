@@ -45,6 +45,8 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
   const [offeringAmount, setOfferingAmount] = useState<number>(0);
   const [showOffering, setShowOffering] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
   const [isDiyaLit, setIsDiyaLit] = useState(false);
   const [auraVisible, setAuraVisible] = useState(false);
   const [flowerHeap, setFlowerHeap] = useState<Array<{ id: number; rotation: number; scale: number }>>([]);
@@ -66,6 +68,20 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
   useEffect(() => {
     // Audio initialization disabled for deployment compatibility
     console.log('Audio would be initialized here');
+    
+    // Check for successful payment
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = urlParams.get('payment');
+    const paymentAmount = urlParams.get('amount');
+    
+    if (paymentSuccess === 'success' && paymentAmount) {
+      // Handle successful payment
+      handleOfferingComplete(parseInt(paymentAmount));
+      // Clear URL parameters
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      return;
+    }
     
     // Start puja automatically
     startPuja();
@@ -276,6 +292,45 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
     playDrum();
   };
 
+  const handlePaymentClick = async (amount: number) => {
+    if (amount === 0) {
+      // Handle free offering
+      handleOfferingComplete(0);
+      return;
+    }
+
+    setPaymentLoading(true);
+    setPaymentError('');
+
+    try {
+      const response = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amount,
+          deityName: deity.name,
+          returnUrl: `${window.location.origin}/puja/${deity.id}/payment-success`
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Redirect to payment page
+        window.location.href = data.paymentUrl;
+      } else {
+        setPaymentError(data.error || 'Payment initialization failed');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      setPaymentError('Failed to initialize payment. Please try again.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   const handleOfferingComplete = (amount: number) => {
     setOfferingAmount(amount);
     setShowOffering(false);
@@ -300,7 +355,7 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
       const totalPunya = punyaEarned + offeringPunya;
       const result = {
         punyaEarned: totalPunya,
-        stepsCompleted: PUJA_SEQUENCE.filter((_, i) => newCompleted.has(i)).map(step => step.id),
+        stepsCompleted: Array.from(newCompleted),
         gesturesPerformed: [],
         offeringAmount: amount
       };
@@ -385,53 +440,6 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
 
   return (
     <div className="h-screen w-screen overflow-hidden text-stone-800 flex flex-col bg-orange-50 relative">
-      <style jsx>{`
-        @keyframes float {
-          0% { transform: translateY(0px) scale(0.95); }
-          50% { transform: translateY(-10px) scale(0.95); }
-          100% { transform: translateY(0px) scale(0.95); }
-        }
-        .float-anim { animation: float 4s ease-in-out infinite; }
-        
-        @keyframes flame-flicker {
-          0%, 100% { transform: scale(1); opacity: 0.9; filter: drop-shadow(0 0 5px orange); }
-          50% { transform: scale(1.1) skewX(2deg); opacity: 1; }
-          25% { transform: scale(0.9) skewX(-2deg); opacity: 0.8; }
-        }
-        .flame-active { animation: flame-flicker 0.15s infinite alternate; }
-
-        @keyframes smoke-rise {
-          0% { transform: translateY(0) scale(1); opacity: 0.7; }
-          100% { transform: translateY(-100px) scale(2); opacity: 0; }
-        }
-        .smoke-particle {
-          position: absolute;
-          background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
-          border-radius: 50%;
-          pointer-events: none;
-          animation: smoke-rise 3s forwards;
-        }
-
-        @keyframes milk-pour-anim {
-          0% { height: 0; opacity: 0.8; }
-          10% { height: 100%; opacity: 1; }
-          90% { height: 100%; opacity: 1; }
-          100% { height: 0; opacity: 0; }
-        }
-        .milk-stream-active {
-          animation: milk-pour-anim 3s ease-in-out forwards;
-        }
-        
-        @keyframes milk-wash-effect {
-          0% { opacity: 0; }
-          20% { opacity: 0.5; }
-          80% { opacity: 0.5; }
-          100% { opacity: 0; }
-        }
-        .milk-overlay-active {
-          animation: milk-wash-effect 3s ease-in-out forwards;
-        }
-      `}</style>
 
       {/* Audio Toggle */}
       <div className="fixed top-4 right-4 z-50">
@@ -615,28 +623,44 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
                 <span>✕</span>
               </button>
             </div>
-            <p className="text-sm text-stone-600 mb-6">Make a virtual offering to increase your Punya and gratitude.</p>
+            <p className="text-sm text-stone-600 mb-6">Make a sacred offering to complete your puja. Payments are secured by Cashfree.</p>
+            
+            {paymentError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {paymentError}
+              </div>
+            )}
             
             <div className="grid grid-cols-2 gap-3 mb-6">
               {[11, 21, 51, 101].map((amount) => (
                 <button
                   key={amount}
-                  onClick={() => handleOfferingComplete(amount)}
-                  className="p-3 border border-orange-200 rounded-lg hover:bg-orange-50 hover:border-orange-500 transition text-center group bg-white font-bold text-orange-700"
+                  onClick={() => handlePaymentClick(amount)}
+                  disabled={paymentLoading}
+                  className="p-3 border border-orange-200 rounded-lg hover:bg-orange-50 hover:border-orange-500 transition text-center group bg-white font-bold text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  ₹{amount}
-                  <span className="block text-xs text-stone-500 font-normal">
-                    +{Math.floor(amount * 0.5)} Punya
-                  </span>
+                  {paymentLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  ) : (
+                    <>
+                      ₹{amount}
+                      <span className="block text-xs text-stone-500 font-normal">
+                        +{Math.floor(amount * 0.5)} Punya
+                      </span>
+                    </>
+                  )}
                 </button>
               ))}
             </div>
             
             <button
-              onClick={() => handleOfferingComplete(0)}
-              className="w-full py-2 text-stone-500 hover:text-stone-700 transition text-sm"
+              onClick={() => handlePaymentClick(0)}
+              disabled={paymentLoading}
+              className="w-full py-2 text-stone-500 hover:text-stone-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Skip offering for now
+              {paymentLoading ? 'Processing...' : 'Skip offering for now'}
             </button>
           </div>
         </div>
