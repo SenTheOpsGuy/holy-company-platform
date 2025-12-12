@@ -18,26 +18,44 @@ interface PujaRitualProps {
 }
 
 const PUJA_SEQUENCE = [
-  { id: 'diya', name: 'Light Diya', icon: '🪔', instruction: 'Begin by lighting the sacred diya to invoke divine presence' },
-  { id: 'incense', name: 'Light Incense', icon: '🕯️', instruction: 'Light the incense sticks to purify the atmosphere' },
-  { id: 'flowers', name: 'Offer Flowers', icon: '🌺', instruction: 'Place fresh flowers as a symbol of devotion and beauty' },
-  { id: 'water', name: 'Offer Water', icon: '💧', instruction: 'Pour clean water to purify and refresh' },
-  { id: 'prasad', name: 'Offer Prasad', icon: '🍯', instruction: 'Present sweets or fruits as nourishment offering' },
-  { id: 'chant', name: 'Chant Mantras', icon: '🕉️', instruction: 'Recite sacred mantras with focused mind' },
-  { id: 'aarti', name: 'Perform Aarti', icon: '🔥', instruction: 'Wave the lamp in circular motions while singing hymns' },
-  { id: 'chadava', name: 'Offer Chadava', icon: '💰', instruction: 'Make a monetary offering as per your devotion' }
+  { id: 'diya', name: 'Light Diya', icon: '🪔', instruction: 'Begin by lighting the sacred diya to invoke divine presence', img: '/images/diya.png' },
+  { id: 'agarbatti', name: 'Incense', icon: '🕯️', instruction: 'Light the incense sticks to purify the atmosphere', img: '/images/incense.png' },
+  { id: 'flower', name: 'Flowers', icon: '🌺', instruction: 'Place fresh flowers as a symbol of devotion and beauty', img: '/images/flower.png' },
+  { id: 'milk', name: 'Offer Milk', icon: '🥛', instruction: 'Pour sacred milk for abhishekam', img: '/images/milk.png' },
+  { id: 'bell', name: 'Ring Bell', icon: '🔔', instruction: 'Ring the bell to invoke divine presence', img: '/images/bell.png' },
+  { id: 'shankh', name: 'Shankh', icon: '🐚', instruction: 'Blow the conch to purify the environment', img: '/images/shankh.png' },
+  { id: 'nagada', name: 'Nagada', icon: '🥁', instruction: 'Beat the drum in rhythm with devotion', img: '/images/nagada.png' },
+  { id: 'chadava', name: 'Chadava', icon: '💰', instruction: 'Make a monetary offering as per your devotion', img: '/images/chadava.png' }
+];
+
+const BLESSINGS = [
+  "May your path be illuminated with wisdom and joy.",
+  "Strength does not come from physical capacity. It comes from an indomitable will.",
+  "Peace comes from within. Do not seek it without.",
+  "Your devotion creates ripples of positivity in the universe.",
+  "The universe is always working in your favor. Have faith."
 ];
 
 export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [message, setMessage] = useState('');
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
+  const [message, setMessage] = useState(`You have chosen ${deity.name}. Your puja begins now. Follow the guided steps.`);
   const [punyaEarned, setPunyaEarned] = useState(0);
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [offeringAmount, setOfferingAmount] = useState<number>(0);
   const [showOffering, setShowOffering] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
   const [isDiyaLit, setIsDiyaLit] = useState(false);
+  const [auraVisible, setAuraVisible] = useState(false);
+  const [flowerHeap, setFlowerHeap] = useState<Array<{ id: number; rotation: number; scale: number }>>([]);
+  const [milkStream, setMilkStream] = useState(false);
   const msgTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [hasShownCompletion, setHasShownCompletion] = useState(false);
+  const [pujaStarted, setPujaStarted] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes total
+  const [stepTimeRemaining, setStepTimeRemaining] = useState(45); // 45 seconds per step
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const stepTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Audio functions (disabled for deployment compatibility)
   const playChime = () => console.log('🔔 Bell sound');
@@ -48,7 +66,81 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
   useEffect(() => {
     // Audio initialization disabled for deployment compatibility
     console.log('Audio would be initialized here');
+    
+    // Start puja automatically
+    startPuja();
+    
+    return () => {
+      // Cleanup timers
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (stepTimerRef.current) clearInterval(stepTimerRef.current);
+      if (msgTimeoutRef.current) clearTimeout(msgTimeoutRef.current);
+    };
   }, []);
+
+  const startPuja = () => {
+    setPujaStarted(true);
+    setCurrentStepIndex(0);
+    showCurrentStepPrompt();
+    
+    // Start overall timer
+    timerRef.current = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          endPuja(false); // Time's up
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    // Start step timer
+    startStepTimer();
+  };
+
+  const startStepTimer = () => {
+    setStepTimeRemaining(45);
+    
+    stepTimerRef.current = setInterval(() => {
+      setStepTimeRemaining(prev => {
+        if (prev <= 1) {
+          // Auto-advance to next step or prompt user
+          handleStepTimeout();
+          return 45; // Reset for next step
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleStepTimeout = () => {
+    const currentStep = PUJA_SEQUENCE[currentStepIndex];
+    
+    if (currentStep.id === 'chadava') {
+      // Mandatory step - force offering modal
+      setShowOffering(true);
+      showMessage("⏰ Time's up! Chadava offering is mandatory to complete your puja.");
+      return;
+    }
+    
+    if (currentStepIndex < PUJA_SEQUENCE.length - 1) {
+      // Move to next step
+      setCurrentStepIndex(prev => prev + 1);
+      showCurrentStepPrompt();
+      showMessage("⏰ Moving to next step. Stay focused on your devotion.");
+    } else {
+      // Force chadava if we've reached the end
+      const chadavaIndex = PUJA_SEQUENCE.findIndex(s => s.id === 'chadava');
+      setCurrentStepIndex(chadavaIndex);
+      setShowOffering(true);
+      showMessage("🙏 Time to complete your puja with the mandatory offering.");
+    }
+  };
+
+  const showCurrentStepPrompt = () => {
+    const step = PUJA_SEQUENCE[currentStepIndex];
+    showMessage(`Step ${currentStepIndex + 1}: ${step.instruction}`);
+  };
 
   const playOfferingChimes = () => {
     if (false) { // if (isAudioEnabled && offeringSynthRef.current) {
@@ -61,47 +153,127 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
     }
   };
 
-  const completeStep = (stepIndex: number) => {
-    if (completedSteps.has(stepIndex)) return;
-
-    const newCompleted = new Set(completedSteps);
-    newCompleted.add(stepIndex);
-    setCompletedSteps(newCompleted);
-
-    const step = PUJA_SEQUENCE[stepIndex];
-    const stepPunya = (PUNYA_REWARDS as any)[deity.id] || 50;
+  const handleToolClick = (toolId: string) => {
+    const currentStep = PUJA_SEQUENCE[currentStepIndex];
     
-    if (step.id === 'diya') {
-      setIsDiyaLit(true);
-      // if (isAudioEnabled && bellSynthRef.current) {
-      //   bellSynthRef.current.triggerAttackRelease(["C4", "E4", "G4", "C5"], "2n");
-      // }
-    }
-
-    if (step.id === 'chadava') {
-      setShowOffering(true);
-      // if (isAudioEnabled && offeringSynthRef.current) {
-      //   offeringSynthRef.current.triggerAttackRelease(["C4", "E4", "G4"], "0.5");
-      // }
+    // Check if this is the correct step
+    if (currentStep.id !== toolId) {
+      showMessage(`❌ Please follow the guided sequence. Current step: ${currentStep.name}`);
       return;
     }
 
-    setPunyaEarned(prev => prev + stepPunya);
-    setMessage(`✨ +${stepPunya} punya earned from ${step.name}!`);
-    
-    // if (isAudioEnabled && offeringSynthRef.current) {
-    //   offeringSynthRef.current.triggerAttackRelease(["G4", "B4", "D5"], "0.5");
-    // }
+    // Add points and track completion
+    if (!completedSteps.has(toolId)) {
+      const newCompleted = new Set(completedSteps);
+      newCompleted.add(toolId);
+      setCompletedSteps(newCompleted);
+      addPunya(75); // Higher points for following sequence
+    }
 
+    // Execute ritual actions
+    switch(toolId) {
+      case 'diya': performDiya(); break;
+      case 'agarbatti': performAgarbatti(); break;
+      case 'flower': performFlower(); break;
+      case 'milk': performMilk(); break;
+      case 'bell': performBell(); break;
+      case 'shankh': performShankh(); break;
+      case 'nagada': performNagada(); break;
+      case 'chadava': setShowOffering(true); return; // Don't advance step yet
+    }
+
+    // Move to next step
+    if (currentStepIndex < PUJA_SEQUENCE.length - 1) {
+      setTimeout(() => {
+        setCurrentStepIndex(prev => prev + 1);
+        if (stepTimerRef.current) clearInterval(stepTimerRef.current);
+        startStepTimer();
+        showCurrentStepPrompt();
+      }, 1500);
+    }
+  };
+
+  const endPuja = (completed: boolean) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (stepTimerRef.current) clearInterval(stepTimerRef.current);
+    
+    if (!completed) {
+      showMessage("⏰ Time's up! Your puja session has ended. Om Shanti.");
+    }
+    
+    // Force chadava if not completed
+    if (!completedSteps.has('chadava')) {
+      setTimeout(() => {
+        setShowOffering(true);
+        showMessage("🙏 Complete your puja with the mandatory Chadava offering.");
+      }, 2000);
+    } else {
+      setShowCompletion(true);
+    }
+  };
+
+  const addPunya = (points: number) => {
+    setPunyaEarned(prev => prev + points);
+  };
+
+  const showMessage = (msg: string) => {
+    setMessage(msg);
     if (msgTimeoutRef.current) {
       clearTimeout(msgTimeoutRef.current);
     }
     msgTimeoutRef.current = setTimeout(() => setMessage(''), 3000);
+  };
 
-    // Auto-advance to next step
-    if (stepIndex < PUJA_SEQUENCE.length - 1) {
-      setTimeout(() => setCurrentStep(stepIndex + 1), 1500);
+  // Ritual performance functions
+  const performDiya = () => {
+    if (!isDiyaLit) {
+      setIsDiyaLit(true);
+      setAuraVisible(true);
+      showMessage("Darkness vanishes before divine light.");
+      playChime();
+    } else {
+      showMessage("The flame burns eternally bright.");
     }
+  };
+
+  const performAgarbatti = () => {
+    showMessage("The air fills with divine fragrance.");
+    playChime();
+    // Smoke effect would be handled by CSS animations
+  };
+
+  const performFlower = () => {
+    showMessage("A shower of flowers for the Divine.");
+    playOffering();
+    // Add flowers to heap
+    const newFlowers = Array.from({ length: 8 }, (_, i) => ({
+      id: Date.now() + i,
+      rotation: Math.random() * 360,
+      scale: 0.6 + Math.random() * 0.4
+    }));
+    setFlowerHeap(prev => [...prev, ...newFlowers].slice(-25)); // Keep max 25 flowers
+  };
+
+  const performMilk = () => {
+    showMessage("Abhishekam: Bathe the deity in purity.");
+    playOffering();
+    setMilkStream(true);
+    setTimeout(() => setMilkStream(false), 3000);
+  };
+
+  const performBell = () => {
+    showMessage("The bell resonates with Om.");
+    playChime();
+  };
+
+  const performShankh = () => {
+    showMessage("The sound of creation purifies all.");
+    playShankh();
+  };
+
+  const performNagada = () => {
+    showMessage("Beating the drums of joy.");
+    playDrum();
   };
 
   const handleOfferingComplete = (amount: number) => {
@@ -109,19 +281,19 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
     setShowOffering(false);
     
     const newCompleted = new Set(completedSteps);
-    newCompleted.add(7); // chadava step
+    newCompleted.add('chadava');
     setCompletedSteps(newCompleted);
 
-    const offeringPunya = Math.floor(amount * 0.1);
+    const offeringPunya = Math.floor(amount * 0.5);
     setPunyaEarned(prev => prev + offeringPunya);
-    setMessage(`🙏 Thank you for your offering of ₹${amount}! +${offeringPunya} punya earned!`);
+    
+    if (amount > 0) {
+      showMessage(`🙏 Thank you for your offering of ₹${amount}! +${offeringPunya} punya earned!`);
+    } else {
+      showMessage(`🙏 Your devotion is the greatest offering. Puja completed with blessings.`);
+    }
     
     playOfferingChimes();
-
-    if (msgTimeoutRef.current) {
-      clearTimeout(msgTimeoutRef.current);
-    }
-    msgTimeoutRef.current = setTimeout(() => setMessage(''), 4000);
 
     // Complete the puja after offering
     setTimeout(async () => {
@@ -143,10 +315,10 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
           },
           body: JSON.stringify({
             deityName: deity.name,
-            steps: result.stepsCompleted,
+            steps: Array.from(newCompleted),
             gestures: result.gesturesPerformed,
             offeringAmount: result.offeringAmount || 0,
-            duration: 60, // Default duration
+            duration: Math.max(60, 300 - timeRemaining), // Actual duration or minimum 60 seconds
           }),
         });
 
@@ -154,13 +326,16 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
           const data = await response.json();
           console.log('Puja saved successfully:', data);
           setMessage(`✨ Puja completed! You earned ${totalPunya} punya points!`);
+          setShowCompletion(true);
         } else {
           console.error('Failed to save puja:', await response.text());
           setMessage(`❗ Puja completed but failed to save. You earned ${totalPunya} punya points!`);
+          setShowCompletion(true);
         }
       } catch (error) {
         console.error('Error saving puja:', error);
         setMessage(`❗ Puja completed but failed to save. You earned ${totalPunya} punya points!`);
+        setShowCompletion(true);
       }
     }, 2000);
   };
@@ -168,14 +343,6 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
   const toggleAudio = () => {
     const newState = !isAudioEnabled;
     setIsAudioEnabled(newState);
-  };
-
-  const currentStepData = PUJA_SEQUENCE[currentStep];
-  const isCurrentStep = (index: number) => index === currentStep;
-  const isStepCompleted = (index: number) => completedSteps.has(index);
-  const canCompleteStep = (index: number) => {
-    if (index === 0) return true; // Can always start with diya
-    return completedSteps.has(index - 1); // Must complete previous step
   };
 
   const getDeityImage = () => {
@@ -192,167 +359,332 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
     return images[deity.id as keyof typeof images] || '/images/default-deity.jpg';
   };
 
-  if (showOffering) {
-    return (
-      <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-xl">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-playfair font-bold text-deep-brown mb-2">
-            Make an Offering
-          </h2>
-          <p className="text-deep-brown/70">
-            Complete your puja with a heartfelt offering
-          </p>
-        </div>
-
-        <div className="space-y-4 mb-6">
-          {[11, 51, 101, 501, 1001].map((amount) => (
-            <button
-              key={amount}
-              onClick={() => handleOfferingComplete(amount)}
-              className="w-full p-4 border-2 border-saffron/30 rounded-xl hover:border-saffron hover:bg-saffron/10 transition-all duration-200 text-center"
-            >
-              <div className="text-xl font-bold text-deep-brown">₹{amount}</div>
-              <div className="text-sm text-deep-brown/60">+{Math.floor(amount * 0.1)} punya</div>
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={() => handleOfferingComplete(0)}
-          className="w-full py-3 text-deep-brown/60 hover:text-deep-brown transition-colors"
-        >
-          Skip offering for now
-        </button>
-      </div>
-    );
-  }
+  const restartPuja = () => {
+    // Clear all timers
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (stepTimerRef.current) clearInterval(stepTimerRef.current);
+    if (msgTimeoutRef.current) clearTimeout(msgTimeoutRef.current);
+    
+    // Reset all state
+    setShowCompletion(false);
+    setCompletedSteps(new Set());
+    setHasShownCompletion(false);
+    setPunyaEarned(0);
+    setIsDiyaLit(false);
+    setAuraVisible(false);
+    setFlowerHeap([]);
+    setMilkStream(false);
+    setCurrentStepIndex(0);
+    setTimeRemaining(300);
+    setStepTimeRemaining(45);
+    setPujaStarted(false);
+    
+    // Restart puja
+    startPuja();
+  };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-xl">
-      {/* Header */}
-      <div className="text-center mb-6">
-        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-saffron/20 to-gold/20 flex items-center justify-center text-4xl">
-          {deity.icon}
-        </div>
-        <h2 className="text-2xl font-playfair font-bold text-deep-brown mb-1">
-          Puja for {deity.name}
-        </h2>
-        <p className="text-deep-brown/70 text-sm">{deity.subtitle}</p>
-        <div className="mt-2 flex items-center justify-center gap-4 text-sm">
-          <span className="text-saffron font-medium">+{punyaEarned} punya earned</span>
-          <button
-            onClick={toggleAudio}
-            className={`px-3 py-1 rounded-full text-xs ${
-              isAudioEnabled ? 'bg-saffron/20 text-saffron' : 'bg-gray-200 text-gray-600'
-            }`}
-          >
-            🔊 {isAudioEnabled ? 'ON' : 'OFF'}
-          </button>
+    <div className="h-screen w-screen overflow-hidden text-stone-800 flex flex-col bg-orange-50 relative">
+      <style jsx>{`
+        @keyframes float {
+          0% { transform: translateY(0px) scale(0.95); }
+          50% { transform: translateY(-10px) scale(0.95); }
+          100% { transform: translateY(0px) scale(0.95); }
+        }
+        .float-anim { animation: float 4s ease-in-out infinite; }
+        
+        @keyframes flame-flicker {
+          0%, 100% { transform: scale(1); opacity: 0.9; filter: drop-shadow(0 0 5px orange); }
+          50% { transform: scale(1.1) skewX(2deg); opacity: 1; }
+          25% { transform: scale(0.9) skewX(-2deg); opacity: 0.8; }
+        }
+        .flame-active { animation: flame-flicker 0.15s infinite alternate; }
+
+        @keyframes smoke-rise {
+          0% { transform: translateY(0) scale(1); opacity: 0.7; }
+          100% { transform: translateY(-100px) scale(2); opacity: 0; }
+        }
+        .smoke-particle {
+          position: absolute;
+          background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+          border-radius: 50%;
+          pointer-events: none;
+          animation: smoke-rise 3s forwards;
+        }
+
+        @keyframes milk-pour-anim {
+          0% { height: 0; opacity: 0.8; }
+          10% { height: 100%; opacity: 1; }
+          90% { height: 100%; opacity: 1; }
+          100% { height: 0; opacity: 0; }
+        }
+        .milk-stream-active {
+          animation: milk-pour-anim 3s ease-in-out forwards;
+        }
+        
+        @keyframes milk-wash-effect {
+          0% { opacity: 0; }
+          20% { opacity: 0.5; }
+          80% { opacity: 0.5; }
+          100% { opacity: 0; }
+        }
+        .milk-overlay-active {
+          animation: milk-wash-effect 3s ease-in-out forwards;
+        }
+      `}</style>
+
+      {/* Audio Toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <button 
+          onClick={toggleAudio}
+          className="bg-orange-600 text-white p-2 rounded-full shadow-lg hover:bg-orange-700 transition"
+        >
+{isAudioEnabled ? '🔊' : '🔇'}
+        </button>
+      </div>
+
+      {/* Temple Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/40">
+          <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1604882737275-ef280c8a4ba9?w=1200')] bg-cover bg-center opacity-60"></div>
         </div>
       </div>
 
-      {/* Progress */}
-      <div className="mb-6">
-        <div className="flex justify-between text-xs text-deep-brown/60 mb-2">
-          <span>Progress</span>
-          <span>{completedSteps.size}/{PUJA_SEQUENCE.length} steps</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="bg-gradient-to-r from-saffron to-gold h-2 rounded-full transition-all duration-500"
-            style={{ width: `${(completedSteps.size / PUJA_SEQUENCE.length) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Current Step */}
-      {currentStepData && (
-        <div className="mb-6 p-4 bg-gradient-to-r from-saffron/10 to-gold/10 rounded-xl border-l-4 border-saffron">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">{currentStepData.icon}</span>
-            <h3 className="font-playfair font-bold text-deep-brown">
-              {currentStepData.name}
-            </h3>
+      {/* Top Bar */}
+      <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-30 bg-gradient-to-b from-black/70 to-transparent">
+        <button className="text-white hover:text-orange-300 transition flex items-center gap-1">
+          <span>←</span>
+          <span className="hidden md:inline">Back</span>
+        </button>
+        
+        <div className="flex flex-col items-center gap-2">
+          <div className="bg-black/40 px-4 py-1 rounded-full border border-yellow-500/50 backdrop-blur-md">
+            <span className="text-yellow-400 font-bold flex items-center gap-2">
+              <span className="text-sm">✨</span>
+              <span>{punyaEarned}</span> Punya
+            </span>
           </div>
-          <p className="text-sm text-deep-brown/80 leading-relaxed">
-            {currentStepData.instruction}
-          </p>
+          
+          {/* Timer Display */}
+          <div className="flex gap-2 text-xs">
+            <div className="bg-red-500/20 px-2 py-1 rounded border border-red-500/50">
+              <span className="text-red-300">⏰ {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}</span>
+            </div>
+            <div className="bg-orange-500/20 px-2 py-1 rounded border border-orange-500/50">
+              <span className="text-orange-300">⏱️ {stepTimeRemaining}s</span>
+            </div>
+          </div>
+          
+          {/* Current Step Indicator */}
+          <div className="bg-blue-500/20 px-3 py-1 rounded border border-blue-500/50">
+            <span className="text-blue-300 text-xs font-medium">
+              Step {currentStepIndex + 1}/{PUJA_SEQUENCE.length}: {PUJA_SEQUENCE[currentStepIndex]?.name}
+            </span>
+          </div>
         </div>
-      )}
+        <div className="w-8"></div>
+      </div>
 
-      {/* Message */}
-      {message && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-center text-green-800 text-sm font-medium">
+      {/* Deity Center Stage */}
+      <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none pb-24">
+        <div className="relative w-full max-w-lg aspect-[3/4] md:aspect-[1/1] flex items-center justify-center">
+          {/* Aura */}
+          <div 
+            className={`absolute w-[80%] h-[80%] rounded-full bg-yellow-500/30 blur-3xl transition-all duration-1000 ${
+              auraVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+            }`}
+          />
+          
+          {/* Milk Overlay */}
+          <div 
+            className={`absolute inset-0 bg-white mix-blend-overlay rounded-full blur-md z-25 pointer-events-none ${
+              milkStream ? 'milk-overlay-active opacity-50' : 'opacity-0'
+            }`}
+          />
+
+          {/* Deity Image */}
+          <img 
+            src={getDeityImage()} 
+            className="relative z-20 h-[85%] object-contain drop-shadow-[0_0_30px_rgba(255,200,0,0.3)] transition-all duration-700 transform scale-95 float-anim" 
+            alt={deity.name}
+          />
+          
+          {/* Milk Stream */}
+          <div className="absolute top-[-5%] left-1/2 -translate-x-1/2 w-12 h-[110%] z-30 pointer-events-none overflow-hidden">
+            <div 
+              className={`w-full bg-gradient-to-b from-white via-white/90 to-transparent rounded-b-full blur-[2px] ${
+                milkStream ? 'milk-stream-active h-full opacity-100' : 'h-0 opacity-0'
+              }`}
+            />
+          </div>
+         
+          {/* Flower Heap */}
+          <div className="absolute bottom-0 w-full h-32 flex justify-center items-end flex-wrap gap-1 z-25 pointer-events-none transition-opacity duration-1000">
+            {flowerHeap.map((flower) => (
+              <span
+                key={flower.id}
+                className="text-lg md:text-xl transition-transform"
+                style={{
+                  transform: `rotate(${flower.rotation}deg) scale(${flower.scale})`,
+                  marginLeft: `${(Math.random() - 0.5) * 10}px`,
+                  marginBottom: `${Math.random() * 5}px`
+                }}
+              >
+                🌺
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Guide Message */}
+      <div className="absolute bottom-32 md:bottom-28 left-1/2 transform -translate-x-1/2 z-40 max-w-xs md:max-w-md mx-4">
+        <div className="bg-black/80 text-yellow-100 px-4 py-3 rounded-lg text-sm md:text-base text-center backdrop-blur-md border border-white/20 shadow-lg transition-all duration-300">
           {message}
         </div>
+      </div>
+
+      {/* Tool Container */}
+      <div className="absolute bottom-0 left-0 right-0 z-50">
+        <div className="bg-gradient-to-t from-stone-900 via-stone-900/95 to-transparent pt-6 pb-4 px-2 overflow-x-auto">
+          <div className="flex justify-center gap-4 md:gap-8 min-w-max px-4">
+            {PUJA_SEQUENCE.map((tool, index) => {
+              const completed = completedSteps.has(tool.id);
+              const isCurrentStep = index === currentStepIndex;
+              const isLit = tool.id === 'diya' && isDiyaLit;
+              
+              return (
+                <div key={tool.id} className="flex flex-col items-center gap-2 group">
+                  <button
+                    onClick={() => handleToolClick(tool.id)}
+                    className={`relative w-16 h-16 md:w-20 md:h-20 rounded-full border-2 flex items-center justify-center shadow-lg transition-all duration-300 overflow-hidden active:scale-95 ${
+                      isCurrentStep 
+                        ? 'bg-yellow-600 border-yellow-400 animate-pulse scale-110' 
+                        : completed
+                        ? 'bg-green-600 border-green-400'
+                        : 'bg-stone-800 border-yellow-600/30 hover:border-yellow-400 hover:bg-stone-700 hover:-translate-y-2'
+                    }`}
+                  >
+                    <span 
+                      className={`text-2xl md:text-3xl relative z-10 transition group-hover:scale-110 ${
+                        isLit ? 'flame-active' : ''
+                      } ${completed ? 'filter brightness-125' : ''} ${
+                        isCurrentStep ? 'text-black font-bold' : 'text-white'
+                      }`}
+                    >
+                      {tool.icon}
+                    </span>
+                    <div className="absolute inset-0 bg-yellow-500/10 opacity-0 group-hover:opacity-100 transition" />
+                    {completed && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full text-white text-xs flex items-center justify-center">
+                        ✓
+                      </div>
+                    )}
+                    {isCurrentStep && !completed && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full text-white text-xs flex items-center justify-center animate-ping">
+                        !
+                      </div>
+                    )}
+                  </button>
+                  <span className={`text-xs font-medium transition text-center ${
+                    isCurrentStep 
+                      ? 'text-yellow-300 font-bold' 
+                      : completed 
+                      ? 'text-green-300' 
+                      : 'text-stone-400 group-hover:text-yellow-400'
+                  }`}>
+                    {tool.name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Offering Modal */}
+      {showOffering && (
+        <div className="absolute inset-0 z-50 bg-black/60 flex items-end md:items-center justify-center p-4">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-sm p-6 shadow-2xl transform translate-y-0 transition-transform">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-orange-800">Offer Chadava</h3>
+              <button 
+                onClick={() => setShowOffering(false)}
+                className="text-stone-400 hover:text-stone-600"
+              >
+                <span>✕</span>
+              </button>
+            </div>
+            <p className="text-sm text-stone-600 mb-6">Make a virtual offering to increase your Punya and gratitude.</p>
+            
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {[11, 21, 51, 101].map((amount) => (
+                <button
+                  key={amount}
+                  onClick={() => handleOfferingComplete(amount)}
+                  className="p-3 border border-orange-200 rounded-lg hover:bg-orange-50 hover:border-orange-500 transition text-center group bg-white font-bold text-orange-700"
+                >
+                  ₹{amount}
+                  <span className="block text-xs text-stone-500 font-normal">
+                    +{Math.floor(amount * 0.5)} Punya
+                  </span>
+                </button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => handleOfferingComplete(0)}
+              className="w-full py-2 text-stone-500 hover:text-stone-700 transition text-sm"
+            >
+              Skip offering for now
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* Steps Grid */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {PUJA_SEQUENCE.map((step, index) => {
-          const completed = isStepCompleted(index);
-          const current = isCurrentStep(index);
-          const canComplete = canCompleteStep(index);
-          
-          return (
-            <button
-              key={step.id}
-              onClick={() => canComplete && !completed && completeStep(index)}
-              disabled={!canComplete || completed}
-              className={`
-                aspect-square rounded-xl border-2 flex flex-col items-center justify-center p-2 transition-all duration-300
-                ${completed 
-                  ? 'bg-green-50 border-green-300 text-green-800' 
-                  : current 
-                    ? 'bg-saffron/20 border-saffron text-deep-brown shadow-lg scale-105' 
-                    : canComplete
-                      ? 'bg-white border-gray-200 text-deep-brown hover:border-saffron/50 hover:bg-saffron/5'
-                      : 'bg-gray-50 border-gray-200 text-gray-400'
-                }
-                ${step.id === 'diya' && isDiyaLit && current ? 'animate-pulse' : ''}
-              `}
-            >
-              <span className={`text-lg mb-1 ${step.id === 'diya' && isDiyaLit && current ? 'animate-bounce' : ''}`}>
-                {step.icon}
-              </span>
-              <span className="text-xs text-center leading-tight font-medium">
-                {step.name}
-              </span>
-              {completed && (
-                <span className="text-xs mt-1">✓</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* Completion Modal */}
+      {showCompletion && (
+        <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl transform transition-all duration-500">
+            <div className="bg-orange-600 p-4 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-yellow-500 opacity-20"></div>
+              <h2 className="text-2xl text-white font-bold relative z-10">Pooja Completed!</h2>
+              <p className="text-orange-100 text-sm relative z-10">Blessings Received</p>
+            </div>
+            
+            <div className="p-6 flex flex-col items-center">
+              <div className="w-full bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 relative">
+                <div className="text-center">
+                  <h3 className="text-xl text-orange-800 font-bold mb-1">Daily Blessing</h3>
+                  <p className="text-stone-600 italic text-sm mb-3">
+                    "{BLESSINGS[Math.floor(Math.random() * BLESSINGS.length)]}"
+                  </p>
+                  <div className="w-full h-32 bg-stone-200 rounded-lg overflow-hidden mb-2 relative shadow-inner">
+                    <img src={getDeityImage()} className="w-full h-full object-cover" alt="Blessing" />
+                  </div>
+                </div>
+              </div>
 
-      {/* Audio Controls */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <button
-          onClick={playChime}
-          className="py-2 px-3 bg-gold/20 text-deep-brown rounded-lg text-sm font-medium hover:bg-gold/30 transition-colors"
-        >
-          🔔 Bell
-        </button>
-        <button
-          onClick={playShankh}
-          className="py-2 px-3 bg-gold/20 text-deep-brown rounded-lg text-sm font-medium hover:bg-gold/30 transition-colors"
-        >
-          🐚 Shankh
-        </button>
-        <button
-          onClick={playDrum}
-          className="py-2 px-3 bg-gold/20 text-deep-brown rounded-lg text-sm font-medium hover:bg-gold/30 transition-colors"
-        >
-          🥁 Drum
-        </button>
-      </div>
+              <div className="flex items-center gap-4 mb-6 w-full justify-center">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-orange-600">+{punyaEarned}</div>
+                  <div className="text-xs text-stone-500 uppercase tracking-wide">Punya Earned</div>
+                </div>
+              </div>
 
-      {/* Instructions */}
-      <div className="text-center text-xs text-deep-brown/60 leading-relaxed">
-        Tap each step in sequence to complete your puja ritual. 
-        {!completedSteps.has(0) && ' Start by lighting the diya.'}
-      </div>
+              <div className="w-full space-y-3">
+                <button 
+                  onClick={restartPuja}
+                  className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-lg transition flex items-center justify-center gap-2"
+                >
+                  <span>🔄</span> 
+                  Perform Another Pooja
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
