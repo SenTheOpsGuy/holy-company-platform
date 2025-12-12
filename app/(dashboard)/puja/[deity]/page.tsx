@@ -1,7 +1,10 @@
-import { currentUser } from '@clerk/nextjs/server';
-import { redirect, notFound } from 'next/navigation';
+'use client';
+
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import { DEITIES, AFFIRMATIONS, OFFERING_TIERS } from '@/lib/constants';
 import PujaRitual from '@/components/puja/PujaRitual';
+import { useEffect, useState } from 'react';
 
 interface Props {
   params: {
@@ -9,11 +12,26 @@ interface Props {
   };
 }
 
-export default async function PujaPage({ params }: Props) {
-  const user = await currentUser();
+export default function PujaPage({ params }: Props) {
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push('/');
+    }
+  }, [isLoaded, user, router]);
+
+  if (!isLoaded || !isClient) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
   
   if (!user) {
-    redirect('/');
     return null;
   }
 
@@ -25,7 +43,20 @@ export default async function PujaPage({ params }: Props) {
   );
 
   if (!deity) {
-    notFound();
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-deep-brown mb-4">Deity Not Found</h1>
+          <p className="text-deep-brown/70 mb-6">The deity you're looking for doesn't exist.</p>
+          <button 
+            onClick={() => router.push('/home')}
+            className="px-6 py-3 bg-saffron text-deep-brown rounded-lg font-semibold hover:bg-gold transition-colors"
+          >
+            Go Back Home
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Note: Database operations moved to API layer to avoid server-side rendering issues
@@ -41,42 +72,11 @@ export default async function PujaPage({ params }: Props) {
   // Get deity's affirmation
   const affirmation = AFFIRMATIONS.find(a => a.deity === deity.id);
 
-  const handlePujaComplete = async (result: any) => {
-    console.log('Puja completed:', result);
-    
-    try {
-      const response = await fetch('/api/pujas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          deityName: deity.name,
-          steps: result.stepsCompleted.map((step: any) => step.id || step),
-          gestures: result.gesturesPerformed.map((gesture: any) => gesture.id || gesture),
-          offeringAmount: result.offeringAmount || 0,
-          duration: 60, // Default duration
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Puja saved successfully:', data);
-        // You could show a success message or redirect here
-      } else {
-        console.error('Failed to save puja:', await response.text());
-      }
-    } catch (error) {
-      console.error('Error saving puja:', error);
-    }
-  };
-
   return (
     <PujaRitual
       deity={deity}
       user={userData}
       offeringTiers={OFFERING_TIERS}
-      onComplete={handlePujaComplete}
     />
   );
 }

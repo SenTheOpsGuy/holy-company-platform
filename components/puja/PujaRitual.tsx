@@ -15,7 +15,6 @@ interface PujaRitualProps {
   };
   user: any;
   offeringTiers: any[];
-  onComplete: (result: { punyaEarned: number; stepsCompleted: any[]; gesturesPerformed: any[]; offeringAmount?: number }) => void;
 }
 
 const PUJA_SEQUENCE = [
@@ -29,7 +28,7 @@ const PUJA_SEQUENCE = [
   { id: 'chadava', name: 'Offer Chadava', icon: '💰', instruction: 'Make a monetary offering as per your devotion' }
 ];
 
-export default function PujaRitual({ deity, user, offeringTiers, onComplete }: PujaRitualProps) {
+export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [message, setMessage] = useState('');
@@ -125,14 +124,44 @@ export default function PujaRitual({ deity, user, offeringTiers, onComplete }: P
     msgTimeoutRef.current = setTimeout(() => setMessage(''), 4000);
 
     // Complete the puja after offering
-    setTimeout(() => {
+    setTimeout(async () => {
       const totalPunya = punyaEarned + offeringPunya;
-      onComplete({
+      const result = {
         punyaEarned: totalPunya,
         stepsCompleted: PUJA_SEQUENCE.filter((_, i) => newCompleted.has(i)).map(step => step.id),
         gesturesPerformed: [],
         offeringAmount: amount
-      });
+      };
+      
+      console.log('Puja completed:', result);
+      
+      try {
+        const response = await fetch('/api/pujas', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            deityName: deity.name,
+            steps: result.stepsCompleted,
+            gestures: result.gesturesPerformed,
+            offeringAmount: result.offeringAmount || 0,
+            duration: 60, // Default duration
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Puja saved successfully:', data);
+          setMessage(`✨ Puja completed! You earned ${totalPunya} punya points!`);
+        } else {
+          console.error('Failed to save puja:', await response.text());
+          setMessage(`❗ Puja completed but failed to save. You earned ${totalPunya} punya points!`);
+        }
+      } catch (error) {
+        console.error('Error saving puja:', error);
+        setMessage(`❗ Puja completed but failed to save. You earned ${totalPunya} punya points!`);
+      }
     }, 2000);
   };
 
