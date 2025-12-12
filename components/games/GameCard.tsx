@@ -73,7 +73,7 @@ export default function GameCard({
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">{deity.emoji}</span>
+          <span className="text-2xl">{deity.icon}</span>
           <div>
             <h3 className={cn(
               'font-playfair text-lg font-bold',

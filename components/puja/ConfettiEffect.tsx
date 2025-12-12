@@ -98,7 +98,6 @@ export default function ConfettiEffect({
 
   return (
     <ReactCanvasConfetti
-      refConfetti={getInstance}
       style={{
         position: 'fixed',
         pointerEvents: 'none',
@@ -133,7 +132,6 @@ export function SimpleConfetti({ trigger }: { trigger: boolean }) {
 
   return (
     <ReactCanvasConfetti
-      refConfetti={getInstance}
       style={{
         position: 'fixed',
         pointerEvents: 'none',

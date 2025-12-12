@@ -1,5 +1,6 @@
 import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/nextjs';
 import BottomNav from '@/components/ui/BottomNav';
+import DesktopNav from '@/components/ui/DesktopNav';
 
 export default function DashboardLayout({
   children,
@@ -13,7 +14,8 @@ export default function DashboardLayout({
       </SignedOut>
       <SignedIn>
         <div className="min-h-screen bg-cream">
-          <main className="pb-20">
+          <DesktopNav />
+          <main className="pb-20 md:pb-0 md:pt-16">
             {children}
           </main>
           <BottomNav />

@@ -1,6 +1,5 @@
 import { currentUser } from '@clerk/nextjs/server';
 import { redirect, notFound } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
 import { DEITIES, AFFIRMATIONS, OFFERING_TIERS } from '@/lib/constants';
 import PujaRitual from '@/components/puja/PujaRitual';
 
@@ -29,64 +28,55 @@ export default async function PujaPage({ params }: Props) {
     notFound();
   }
 
-  // Get user data to check for existing user record
-  let userData = await prisma.user.findUnique({
-    where: { clerkId: user.id },
-  });
-
-  // Create user record if doesn't exist
-  if (!userData) {
-    userData = await prisma.user.create({
-      data: {
-        clerkId: user.id,
-        email: user.primaryEmailAddress?.emailAddress || '',
-        firstName: user.firstName,
-        lastName: user.lastName,
-      },
-    });
-  }
-
-  // Get user's recent pujas for this deity
-  const recentPujas = await prisma.puja.findMany({
-    where: {
-      userId: userData.id,
-      deityName: deity.name,
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-  });
-
-  // Check if user did puja today
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todaysPuja = recentPujas.find(puja => {
-    const pujaDate = new Date(puja.createdAt);
-    pujaDate.setHours(0, 0, 0, 0);
-    return pujaDate.getTime() === today.getTime();
-  });
+  // Note: Database operations moved to API layer to avoid server-side rendering issues
+  // User data will be handled when the puja is completed via the API
+  const userData = {
+    id: user.id, // Using Clerk ID as fallback
+    clerkId: user.id,
+    email: user.primaryEmailAddress?.emailAddress || '',
+    firstName: user.firstName,
+    lastName: user.lastName,
+  };
 
   // Get deity's affirmation
   const affirmation = AFFIRMATIONS.find(a => a.deity === deity.id);
 
-  return (
-    <>
-      {/* Hide bottom navigation for fullscreen experience */}
-      <style jsx global>{`
-        body {
-          overflow: hidden;
-        }
-        nav[class*="BottomNav"],
-        nav[class*="bottom-nav"] {
-          display: none !important;
-        }
-      `}</style>
+  const handlePujaComplete = async (result: any) => {
+    console.log('Puja completed:', result);
+    
+    try {
+      const response = await fetch('/api/pujas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          deityName: deity.name,
+          steps: result.stepsCompleted.map((step: any) => step.id || step),
+          gestures: result.gesturesPerformed.map((gesture: any) => gesture.id || gesture),
+          offeringAmount: result.offeringAmount || 0,
+          duration: 60, // Default duration
+        }),
+      });
 
-      {/* Fullscreen Immersive Puja Experience */}
-      <PujaRitual
-        deity={deity}
-        user={userData}
-        offeringTiers={OFFERING_TIERS}
-      />
-    </>
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Puja saved successfully:', data);
+        // You could show a success message or redirect here
+      } else {
+        console.error('Failed to save puja:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error saving puja:', error);
+    }
+  };
+
+  return (
+    <PujaRitual
+      deity={deity}
+      user={userData}
+      offeringTiers={OFFERING_TIERS}
+      onComplete={handlePujaComplete}
+    />
   );
 }

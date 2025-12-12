@@ -241,7 +241,17 @@ async function main() {
   console.log('Seeding games...');
   for (const game of GAMES) {
     await prisma.game.create({
-      data: game,
+      data: {
+        title: game.name,
+        description: game.description,
+        type: game.mechanics,
+        deityName: game.deity,
+        requiredPunya: game.unlockPrice,
+        controls: JSON.stringify({
+          type: game.mechanics,
+          instructions: game.description
+        })
+      },
     });
   }
   console.log(`✅ Created ${GAMES.length} games`);
@@ -250,7 +260,15 @@ async function main() {
   console.log('Seeding content...');
   for (const content of CONTENT) {
     await prisma.content.create({
-      data: content,
+      data: {
+        title: content.title,
+        description: content.body.substring(0, 200),
+        content: content.body,
+        type: content.type,
+        category: 'general',
+        imageUrl: content.mediaUrl,
+        featured: false
+      },
     });
   }
   console.log(`✅ Created ${CONTENT.length} content posts`);

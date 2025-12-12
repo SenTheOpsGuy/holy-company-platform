@@ -21,6 +21,7 @@ interface CashfreeOrderResponse {
   order_status: string;
   payment_session_id: string;
   order_token?: string;
+  payment_url?: string;
 }
 
 export class CashfreeClient {
@@ -171,4 +172,24 @@ export function openCashfreeCheckout(
   };
 
   document.body.appendChild(script);
+}
+
+// Convenience functions for API routes
+export async function createCashfreeOrder(params: {
+  userId: string;
+  userEmail: string;
+  amount: number;
+  type: 'game_unlock' | 'chadava';
+  gameId?: string;
+  deity?: string;
+}): Promise<CashfreeOrderResponse | null> {
+  return cashfreeClient.createOrder(params);
+}
+
+export function verifyCashfreeWebhook(
+  webhookBody: string,
+  receivedSignature: string,
+  timestamp: string
+): boolean {
+  return cashfreeClient.verifyWebhookSignature(webhookBody, receivedSignature, timestamp);
 }

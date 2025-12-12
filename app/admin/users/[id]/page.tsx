@@ -1,4 +1,4 @@
-import { currentUser } from '@clerk/nextjs';
+import { currentUser } from '@clerk/nextjs/server';
 import { redirect, notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import UserDetail from '@/components/admin/UserDetail';
@@ -63,7 +63,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
               href="/admin/users"
               className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              ê
+              ‚Üê
             </Link>
             <div>
               <h1 className="text-2xl font-playfair font-bold text-gray-900">

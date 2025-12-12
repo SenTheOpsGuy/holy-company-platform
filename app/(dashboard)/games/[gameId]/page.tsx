@@ -36,7 +36,7 @@ export default async function GamePage({ params }: GamePageProps) {
       
       <div className="p-6 max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-          <div className="text-6xl mb-4"><®</div>
+          <div className="text-6xl mb-4">ðŸŽ®</div>
           <h2 className="text-2xl font-playfair font-bold text-deep-brown mb-4">
             {game.title}
           </h2>

@@ -37,11 +37,11 @@ export default function ContentCard({
 }: ContentCardProps) {
   const getTypeIcon = () => {
     switch (type) {
-      case 'video':
+      case 'VIDEO':
         return '🎥';
-      case 'blog':
+      case 'BLOG':
         return '📝';
-      case 'image':
+      case 'IMAGE':
         return '🖼️';
       default:
         return '📄';
@@ -50,11 +50,11 @@ export default function ContentCard({
 
   const getTypeColor = () => {
     switch (type) {
-      case 'video':
+      case 'VIDEO':
         return 'text-red-600 bg-red-100';
-      case 'blog':
+      case 'BLOG':
         return 'text-blue-600 bg-blue-100';
-      case 'image':
+      case 'IMAGE':
         return 'text-purple-600 bg-purple-100';
       default:
         return 'text-gray-600 bg-gray-100';
@@ -107,7 +107,7 @@ export default function ContentCard({
           {/* Duration/Read time */}
           {(duration || readTime) && (
             <div className="absolute bottom-3 right-3 bg-black/70 text-white px-2 py-1 rounded text-xs font-medium">
-              {type === 'video' && duration 
+              {type === 'VIDEO' && duration 
                 ? formatDuration(duration)
                 : `${readTime} min read`
               }

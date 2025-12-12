@@ -13,7 +13,7 @@ export default async function GamesPage() {
 
   // Get all available games
   const games = await prisma.game.findMany({
-    orderBy: { name: 'asc' }
+    orderBy: { title: 'asc' }
   });
 
   // Get user's game stats
@@ -22,7 +22,7 @@ export default async function GamesPage() {
     include: {
       userGames: {
         take: 10,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { lastPlayed: 'desc' },
         include: { game: true }
       },
       _count: {
@@ -32,7 +32,7 @@ export default async function GamesPage() {
   });
 
   const totalGamesPlayed = userData?._count.userGames || 0;
-  const totalPunyaFromGames = userData?.userGames.reduce((sum, game) => sum + game.punyaEarned, 0) || 0;
+  const totalPunyaFromGames = userData?.userGames.reduce((sum, game) => sum + (game.highScore * 10), 0) || 0;
 
   return (
     <div className="min-h-screen bg-cream safe-top">
@@ -78,10 +78,9 @@ export default async function GamesPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {games.map((game) => {
-              const userGameStats = userData?.userGames.filter(ug => ug.gameId === game.id);
-              const bestScore = userGameStats?.reduce((best, current) => 
-                current.score > best ? current.score : best, 0) || 0;
-              const timesPlayed = userGameStats?.length || 0;
+              const userGameData = userData?.userGames.find(ug => ug.gameId === game.id);
+              const bestScore = userGameData?.highScore || 0;
+              const timesPlayed = userGameData?.timesPlayed || 0;
 
               return (
                 <div key={game.id} className="group">
@@ -102,7 +101,7 @@ export default async function GamesPage() {
                       {/* Game Info */}
                       <div className="p-6">
                         <h3 className="text-xl font-playfair font-bold text-deep-brown mb-2 group-hover:text-saffron transition-colors">
-                          {game.name}
+                          {game.title}
                         </h3>
                         <p className="text-deep-brown/70 text-sm mb-4 leading-relaxed">
                           {game.description}
@@ -166,14 +165,14 @@ export default async function GamesPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">🎮</span>
                     <div>
-                      <p className="font-semibold text-deep-brown">{userGame.game.name}</p>
+                      <p className="font-semibold text-deep-brown">{userGame.game.title}</p>
                       <p className="text-sm text-deep-brown/60">
-                        Score: {userGame.score} • {new Date(userGame.createdAt).toLocaleDateString()}
+                        Best Score: {userGame.highScore} • {new Date(userGame.lastPlayed).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-deep-brown/80">+{userGame.punyaEarned} punya</p>
+                    <p className="text-sm text-deep-brown/80">+{userGame.highScore * 10} punya</p>
                   </div>
                 </div>
               ))}

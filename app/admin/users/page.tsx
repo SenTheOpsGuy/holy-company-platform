@@ -1,4 +1,4 @@
-import { currentUser } from '@clerk/nextjs';
+import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import UserTable from '@/components/admin/UserTable';
@@ -84,6 +84,22 @@ export default async function AdminUsersPage({ searchParams }: Props) {
 
   const totalPages = Math.ceil(totalUsers / pageSize);
 
+  // Transform users data to match UserTable interface
+  const transformedUsers = users.map(user => ({
+    id: user.id,
+    name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+    email: user.email,
+    joinedAt: user.createdAt,
+    lastActive: user.lastPujaDate || user.createdAt,
+    punyaPoints: user.punyaBalance,
+    totalPujas: user._count.pujas,
+    gamesPlayed: user._count.userGames,
+    totalSpent: user.offerings.reduce((sum, offering) => sum + offering.amount, 0),
+    status: (user.lastPujaDate && 
+      new Date(user.lastPujaDate) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    ) ? 'active' : 'inactive' as 'active' | 'inactive' | 'blocked'
+  }));
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -95,7 +111,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
                 href="/admin"
                 className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                ê
+                ‚Üê
               </Link>
               <div>
                 <h1 className="text-2xl font-playfair font-bold text-gray-900">
@@ -144,7 +160,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 text-xl">=e</span>
+                <span className="text-blue-600 text-xl">üë•</span>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total Users</p>
@@ -156,7 +172,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 text-xl">=‚</span>
+                <span className="text-green-600 text-xl">‚úÖ</span>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Active Users</p>
@@ -172,7 +188,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-purple-600 text-xl">=é</span>
+                <span className="text-purple-600 text-xl">‚≠ê</span>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Premium Users</p>
@@ -186,7 +202,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <span className="text-orange-600 text-xl">= </span>
+                <span className="text-orange-600 text-xl">üí∞</span>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Avg. Punya</p>
@@ -201,9 +217,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
         {/* Users Table */}
         <div className="bg-white rounded-lg shadow">
           <UserTable 
-            users={users}
-            currentPage={page}
-            totalPages={totalPages}
+            users={transformedUsers}
           />
         </div>
       </div>

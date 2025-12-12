@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs';
+import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
@@ -92,19 +92,18 @@ export async function POST(request: NextRequest) {
     });
 
     // Create game session record for analytics
-    await prisma.gameSession.create({
-      data: {
-        userId: userData.id,
-        gameId: game.id,
-        score: score,
-        duration: duration || null,
-        punyaEarned: punyaEarned,
-        achievements: achievements || [],
-        isHighScore: isNewHighScore,
-      },
-    }).catch(() => {
-      // Ignore if GameSession table doesn't exist yet
-    });
+    // Note: GameSession model not implemented yet
+    // await prisma.gameSession.create({
+    //   data: {
+    //     userId: userData.id,
+    //     gameId: game.id,
+    //     score: score,
+    //     duration: duration || null,
+    //     punyaEarned: punyaEarned,
+    //     achievements: achievements || [],
+    //     isHighScore: isNewHighScore,
+    //   },
+    // });
 
     return NextResponse.json({
       success: true,

@@ -34,20 +34,20 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-cream safe-top">
       {/* Header */}
-      <header className="bg-gradient-to-r from-temple-brown to-deep-brown text-cream p-6 rounded-b-3xl shadow-lg">
+      <header className="bg-gradient-to-r from-temple-brown to-deep-brown text-cream p-4 md:p-6 rounded-b-3xl shadow-lg">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-playfair font-bold mb-2">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-playfair font-bold mb-2">
             Namaste, {user.firstName || 'Devotee'} 🙏
           </h1>
-          <p className="text-cream/80">
+          <p className="text-sm md:text-base text-cream/80">
             Choose your deity and begin your spiritual practice
           </p>
         </div>
       </header>
 
       {/* Stats Section */}
-      <section className="p-6 max-w-4xl mx-auto">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <section className="p-4 md:p-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           <StatsCard 
             icon="✨" 
             label="Punya Points" 
@@ -75,11 +75,11 @@ export default async function HomePage() {
         </div>
 
         {/* Deity Selection */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-playfair font-bold text-deep-brown mb-6 text-center">
+        <div className="mb-6 md:mb-8">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-playfair font-bold text-deep-brown mb-4 md:mb-6 text-center">
             Select Your Deity
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {DEITIES.map((deity) => (
               <DeityCard 
                 key={deity.id} 

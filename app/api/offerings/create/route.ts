@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs';
+import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { createCashfreeOrder } from '@/lib/cashfree';
 
@@ -46,16 +46,16 @@ export async function POST(request: NextRequest) {
     // Create Cashfree order
     try {
       const cashfreeOrder = await createCashfreeOrder({
-        orderId: `offering_${offering.id}`,
+        userId: userData.id,
+        userEmail: userData.email,
         amount: amount,
-        customerDetails: {
-          id: userData.id,
-          name: `${userData.firstName} ${userData.lastName}`.trim() || 'Devotee',
-          email: userData.email,
-          phone: '9999999999' // Default phone, should be collected from user
-        },
-        orderNote: `Offering to ${deityName}`
+        type: 'chadava',
+        deity: deityName
       });
+
+      if (!cashfreeOrder) {
+        throw new Error('Failed to create payment order');
+      }
 
       // Update offering with payment details
       await prisma.offering.update({

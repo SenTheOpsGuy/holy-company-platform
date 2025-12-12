@@ -20,7 +20,7 @@ export default async function ProfilePage() {
       },
       userGames: {
         take: 10,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { lastPlayed: 'desc' },
         include: { game: true }
       },
       offerings: {
@@ -132,14 +132,14 @@ export default async function ProfilePage() {
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">🎮</span>
                     <div>
-                      <p className="font-semibold text-deep-brown">{userGame.game.name}</p>
+                      <p className="font-semibold text-deep-brown">{userGame.game.title}</p>
                       <p className="text-sm text-deep-brown/60">
-                        Score: {userGame.score} • {new Date(userGame.createdAt).toLocaleDateString()}
+                        Best Score: {userGame.highScore} • {new Date(userGame.lastPlayed).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-deep-brown/80">+{userGame.punyaEarned} punya</p>
+                    <p className="text-sm text-deep-brown/80">+{userGame.highScore * 10} punya</p>
                   </div>
                 </div>
               ))}

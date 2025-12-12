@@ -45,7 +45,7 @@ export default function GameCanvas({
   const { showToast, ToastComponent } = useToast();
 
   const createGameObject = useCallback(() => {
-    const objects: Partial<GameObject> = {
+    const objects: Record<string, GameObject> = {
       ganesha: {
         id: `modak-${Date.now()}`,
         x: Math.random() * (width - 30),

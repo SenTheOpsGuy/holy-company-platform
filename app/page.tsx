@@ -1,7 +1,14 @@
 import { SignInButton, SignUpButton, SignedIn, SignedOut } from '@clerk/nextjs';
+import { redirect } from 'next/navigation';
+import { currentUser } from '@clerk/nextjs/server';
 import Link from 'next/link';
 
-export default function Home() {
+export default async function Home() {
+  const user = await currentUser();
+  
+  if (user) {
+    redirect('/home');
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-cream via-white to-cream">

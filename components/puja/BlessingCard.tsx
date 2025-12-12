@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { DEITIES, AFFIRMATIONS } from '@/lib/constants';
-import { generateBlessingImage } from '@/lib/blob';
+// import { generateBlessingImage } from '@/lib/blob';
 import Button from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
@@ -75,7 +75,7 @@ export default function BlessingCard({
 
     // Deity emoji (large)
     ctx.font = '120px serif';
-    ctx.fillText(deity.emoji, canvas.width / 2, 320);
+    ctx.fillText(deity.icon, canvas.width / 2, 320);
 
     // Affirmation
     ctx.fillStyle = '#5D4037';

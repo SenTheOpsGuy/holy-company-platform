@@ -261,7 +261,7 @@ export default function ContentFeed({ className }: ContentFeedProps) {
               id={item.id}
               title={item.title}
               description={item.description}
-              type={item.type}
+              type={item.type.toUpperCase() as 'VIDEO' | 'IMAGE' | 'BLOG'}
               imageUrl={item.imageUrl}
               duration={item.duration}
               readTime={item.readTime}

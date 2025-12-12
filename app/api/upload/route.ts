@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs';
+import { currentUser } from '@clerk/nextjs/server';
 import { put } from '@vercel/blob';
 import { prisma } from '@/lib/prisma';
 
@@ -73,19 +73,20 @@ export async function POST(request: NextRequest) {
       });
 
       // Create upload record in database
-      await prisma.upload.create({
-        data: {
-          userId: userData?.id || null,
-          fileName: file.name,
-          fileSize: file.size,
-          mimeType: file.type,
-          blobUrl: blob.url,
-          uploadType,
-        }
-      }).catch(error => {
-        // If Upload table doesn't exist, just log the error
-        console.error('Could not save upload record:', error);
-      });
+      // Note: Upload model not implemented yet
+      // await prisma.upload.create({
+      //   data: {
+      //     userId: userData?.id || null,
+      //     fileName: file.name,
+      //     fileSize: file.size,
+      //     mimeType: file.type,
+      //     blobUrl: blob.url,
+      //     uploadType,
+      //   }
+      // }).catch(error => {
+      //   // If Upload table doesn't exist, just log the error
+      //   console.error('Could not save upload record:', error);
+      // });
 
       return NextResponse.json({
         success: true,
@@ -148,24 +149,27 @@ export async function GET(request: NextRequest) {
 
     try {
       // Get paginated uploads
-      const [uploads, totalCount] = await Promise.all([
-        prisma.upload.findMany({
-          where,
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-                email: true
-              }
-            }
-          }
-        }),
-        prisma.upload.count({ where })
-      ]);
+      // Note: Upload model not implemented yet
+      const uploads: any[] = [];
+      const totalCount = 0;
+      // const [uploads, totalCount] = await Promise.all([
+      //   prisma.upload.findMany({
+      //     where,
+      //     skip: (page - 1) * limit,
+      //     take: limit,
+      //     orderBy: { createdAt: 'desc' },
+      //     include: {
+      //       user: {
+      //         select: {
+      //           firstName: true,
+      //           lastName: true,
+      //           email: true
+      //         }
+      //       }
+      //     }
+      //   }),
+      //   prisma.upload.count({ where })
+      // ]);
 
       const totalPages = Math.ceil(totalCount / limit);
 

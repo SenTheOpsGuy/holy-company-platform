@@ -27,15 +27,21 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Find user in database
-    const userData = await prisma.user.findUnique({
+    // Find user in database or create if doesn't exist
+    let userData = await prisma.user.findUnique({
       where: { clerkId: user.id },
     });
 
     if (!userData) {
-      return NextResponse.json({ 
-        error: 'User not found' 
-      }, { status: 404 });
+      // Create user record if doesn't exist
+      userData = await prisma.user.create({
+        data: {
+          clerkId: user.id,
+          email: user.primaryEmailAddress?.emailAddress || '',
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+      });
     }
 
     // Calculate punya points based on steps completed and offering
@@ -55,8 +61,8 @@ export async function POST(request: NextRequest) {
       data: {
         userId: userData.id,
         deityName,
-        stepsCompleted: steps,
-        gesturesPerformed: gestures || [],
+        stepsCompleted: JSON.stringify(steps),
+        gesturesPerformed: JSON.stringify(gestures || []),
         punyaEarned: finalPunya,
         offeringAmount: offeringAmount || null,
         duration: duration || null,
@@ -84,6 +90,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: userData.id,
           pujaId: puja.id,
+          deityName: deityName,
           amount: offeringAmount,
           status: 'PENDING',
           paymentMethod: 'CASHFREE',
@@ -134,15 +141,21 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const deityFilter = searchParams.get('deity');
 
-    // Find user in database
-    const userData = await prisma.user.findUnique({
+    // Find user in database or create if doesn't exist
+    let userData = await prisma.user.findUnique({
       where: { clerkId: user.id },
     });
 
     if (!userData) {
-      return NextResponse.json({ 
-        error: 'User not found' 
-      }, { status: 404 });
+      // Create user record if doesn't exist
+      userData = await prisma.user.create({
+        data: {
+          clerkId: user.id,
+          email: user.primaryEmailAddress?.emailAddress || '',
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+      });
     }
 
     // Build filter conditions

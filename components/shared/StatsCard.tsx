@@ -23,14 +23,14 @@ const colorClasses = {
 
 export default function StatsCard({ icon, label, value, color, subtitle }: StatsCardProps) {
   return (
-    <div className={`${colorClasses[color]} rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow`}>
-      <div className="flex items-center gap-3">
-        <div className="text-2xl">{icon}</div>
-        <div className="flex-1">
-          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+    <div className={`${colorClasses[color]} rounded-lg md:rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition-shadow`}>
+      <div className="flex items-center gap-2 md:gap-3">
+        <div className="text-xl md:text-2xl flex-shrink-0">{icon}</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide truncate">
             {label}
           </p>
-          <p className="text-lg font-bold text-gray-900">
+          <p className="text-base md:text-lg font-bold text-gray-900 truncate">
             {value}
           </p>
           {subtitle && (

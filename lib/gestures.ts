@@ -270,3 +270,19 @@ export class DragDetector {
     return this.isDragging;
   }
 }
+
+// Simple gesture detection function for convenience
+export function detectGesture(
+  touchPoints: { x: number; y: number; time: number }[]
+): GestureType | null {
+  if (touchPoints.length < 2) return null;
+  
+  const detector = new GestureDetector();
+  const end = { 
+    x: touchPoints[touchPoints.length - 1].x,
+    y: touchPoints[touchPoints.length - 1].y,
+    timestamp: touchPoints[touchPoints.length - 1].time
+  };
+  
+  return detector.detectSwipe(end);
+}

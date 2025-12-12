@@ -73,9 +73,9 @@ export default function UserTable({
       }
 
       if (sortDirection === 'asc') {
-        return aValue > bValue ? 1 : -1;
+        return (aValue || 0) > (bValue || 0) ? 1 : -1;
       } else {
-        return aValue < bValue ? 1 : -1;
+        return (aValue || 0) < (bValue || 0) ? 1 : -1;
       }
     });
 

@@ -9,7 +9,9 @@ export async function POST(request: NextRequest) {
     const headers = request.headers;
 
     // Verify Cashfree webhook signature
-    const isValidWebhook = await verifyCashfreeWebhook(body, headers);
+    const signature = request.headers.get('x-cf-signature') || '';
+    const timestamp = request.headers.get('x-cf-timestamp') || '';
+    const isValidWebhook = verifyCashfreeWebhook(body, signature, timestamp);
     
     if (!isValidWebhook) {
       return NextResponse.json({ 
@@ -94,17 +96,12 @@ export async function POST(request: NextRequest) {
 
       // Send confirmation email
       try {
-        await sendEmail({
-          to: offering.user.email,
-          templateId: 'offering-success',
-          params: {
-            userName: offering.user.firstName || 'Devotee',
-            deityName: offering.deityName,
-            amount: offering.amount,
-            bonusPunya: bonusPunya,
-            offeringId: offering.id
-          }
-        });
+        await sendEmail(
+          offering.user.email,
+          'Offering Confirmed',
+          `Your offering of ₹${offering.amount} to ${offering.deityName} has been completed successfully.`,
+          'offering-success'
+        );
       } catch (emailError) {
         console.error('Failed to send offering confirmation email:', emailError);
         // Don't fail the whole process if email fails

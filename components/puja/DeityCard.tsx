@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 
 interface Deity {
@@ -22,8 +23,8 @@ export default function DeityCard({ deity, userPujaCount }: DeityCardProps) {
       <Link href={pujaUrl}>
         <div className="bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-saffron/30 transition-all duration-300 overflow-hidden">
           {/* Deity Icon */}
-          <div className={`${deity.color} p-8 text-center relative`}>
-            <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-300">
+          <div className={`${deity.color} p-4 md:p-6 lg:p-8 text-center relative`}>
+            <div className="text-4xl md:text-5xl lg:text-6xl mb-2 md:mb-4 group-hover:scale-110 transition-transform duration-300">
               {deity.icon}
             </div>
             <div className="absolute top-2 right-2">
@@ -36,11 +37,11 @@ export default function DeityCard({ deity, userPujaCount }: DeityCardProps) {
           </div>
 
           {/* Deity Info */}
-          <div className="p-6">
-            <h3 className="text-xl font-playfair font-bold text-deep-brown mb-2 group-hover:text-saffron transition-colors">
+          <div className="p-4 md:p-5 lg:p-6">
+            <h3 className="text-lg md:text-xl lg:text-xl font-playfair font-bold text-deep-brown mb-2 group-hover:text-saffron transition-colors">
               {deity.name}
             </h3>
-            <p className="text-deep-brown/70 text-sm mb-4 leading-relaxed">
+            <p className="text-deep-brown/70 text-xs md:text-sm mb-3 md:mb-4 leading-relaxed">
               {deity.description}
             </p>
 
