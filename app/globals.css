@@ -272,3 +272,10 @@ canvas {
 .milk-overlay-active {
   animation: milk-wash-effect 3s ease-in-out forwards;
 }
+
+/* Sanskrit Font Styling */
+.font-sanskrit {
+  font-family: 'Noto Serif Devanagari', 'Marathi Sangam MN', 'Sanskrit Sangam MN', serif;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+}

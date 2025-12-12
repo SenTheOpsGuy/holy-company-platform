@@ -71,6 +71,15 @@ export const DEITIES = [
     color: 'bg-gradient-to-br from-purple-500 to-indigo-700',
     blessings: ['Balance', 'Preservation', 'Harmony'],
   },
+  {
+    id: 'saraswati',
+    name: 'Saraswati',
+    subtitle: 'Goddess of Knowledge',
+    icon: '🎼',
+    description: 'Goddess of Knowledge',
+    color: 'bg-gradient-to-br from-cyan-500 to-blue-600',
+    blessings: ['Knowledge', 'Arts', 'Wisdom'],
+  },
 ];
 
 export const PUJA_STEPS = [
@@ -134,6 +143,7 @@ export const AFFIRMATIONS = [
   { deity: 'durga', text: 'Courage awakens, fear dissolves' },
   { deity: 'ram', text: 'Righteousness guides your choices' },
   { deity: 'vishnu', text: 'Balance restores in all aspects of life' },
+  { deity: 'saraswati', text: 'Knowledge flows effortlessly to you' },
 ];
 
 export const OFFERING_TIERS = [
@@ -201,6 +211,12 @@ export const GAME_CONFIGS = {
     duration: 60,
     difficulty: 'hard',
     pointsPerHit: 15,
+  },
+  saraswati: {
+    type: 'music',
+    duration: 60,
+    difficulty: 'medium',
+    pointsPerNote: 18,
   },
 };
 

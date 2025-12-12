@@ -35,12 +35,19 @@ export default function PujaPage({ params }: Props) {
     return null;
   }
 
-  // Find deity by slug
-  const deitySlug = params.deity.replace('-', ' ').toLowerCase();
-  const deity = DEITIES.find(d => 
-    d.name.toLowerCase() === deitySlug || 
-    d.id.toLowerCase() === params.deity
-  );
+  // Find deity by slug - handle both direct ID match and name variations
+  const deity = DEITIES.find(d => {
+    // Direct ID match
+    if (d.id.toLowerCase() === params.deity.toLowerCase()) {
+      return true;
+    }
+    
+    // Name variations
+    const deityName = d.name.toLowerCase().replace('shri ', '');
+    const urlParam = params.deity.toLowerCase().replace('-', ' ');
+    
+    return deityName === urlParam || d.name.toLowerCase() === urlParam;
+  });
 
   if (!deity) {
     return (

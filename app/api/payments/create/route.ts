@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Generate unique order ID
+    // Generate unique order ID and timestamp for signature
     const orderId = `puja_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const timestamp = Math.floor(Date.now() / 1000).toString();
 
@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
         customer_phone: user.phoneNumbers[0]?.phoneNumber || '9999999999'
       },
       order_meta: {
-        return_url: returnUrl || `${req.nextUrl.origin}/puja/payment-success`,
-        notify_url: `${req.nextUrl.origin}/api/payments/webhook`,
+        return_url: returnUrl || `${process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin}/puja/${deityName.toLowerCase()}/payment-success`,
+        notify_url: `${process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin}/api/payments/webhook`,
         payment_methods: 'cc,dc,nb,upi,paylater,emi,app'
       },
       order_note: `Chadava offering for ${deityName} puja`,
@@ -57,6 +57,8 @@ export async function POST(req: NextRequest) {
     const postData = JSON.stringify(orderData);
     const signature = generateSignature(postData, timestamp);
 
+    // Debug logging removed for production
+
     const headers = {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -64,7 +66,9 @@ export async function POST(req: NextRequest) {
       'x-client-id': process.env.CASHFREE_APP_ID!,
       'x-client-secret': process.env.CASHFREE_SECRET_KEY!,
       'x-request-id': crypto.randomUUID(),
-      'x-idempotency-key': orderId
+      'x-idempotency-key': orderId,
+      'x-cf-signature': signature,
+      'x-timestamp': timestamp
     };
 
     const response = await fetch(`${CASHFREE_BASE_URL}/orders`, {

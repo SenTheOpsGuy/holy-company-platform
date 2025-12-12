@@ -2,6 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { PUNYA_REWARDS } from '@/lib/constants';
+import ChantingSession from '../chanting/ChantingSession';
+import PujaProgressBar, { PujaStep } from './PujaProgressBar';
+import { useChantSelection } from '@/hooks/useChantSelection';
 
 interface PujaRitualProps {
   deity: {
@@ -56,8 +59,16 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
   const [pujaStarted, setPujaStarted] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes total
   const [stepTimeRemaining, setStepTimeRemaining] = useState(45); // 45 seconds per step
+  const [showChanting, setShowChanting] = useState(false);
+  const [chantingCompleted, setChantingCompleted] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stepTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Chanting selection hook
+  const { selectedChant } = useChantSelection({ 
+    deityId: deity.id, 
+    offeringAmount: offeringAmount 
+  });
   
   // Audio functions (disabled for deployment compatibility)
   const playChime = () => console.log('🔔 Bell sound');
@@ -343,16 +354,52 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
     setPunyaEarned(prev => prev + offeringPunya);
     
     if (amount > 0) {
-      showMessage(`🙏 Thank you for your offering of ₹${amount}! +${offeringPunya} punya earned!`);
+      showMessage(`🙏 Thank you for your offering of ₹${amount}! Now proceed to the sacred chanting.`);
+      // Start chanting phase for paid offerings
+      setTimeout(() => {
+        setShowChanting(true);
+      }, 2000);
     } else {
+      // Free offering - skip chanting and complete puja
       showMessage(`🙏 Your devotion is the greatest offering. Puja completed with blessings.`);
+      setTimeout(() => {
+        completePujaAfterChanting(amount, offeringPunya);
+      }, 2000);
     }
     
     playOfferingChimes();
-
-    // Complete the puja after offering
-    setTimeout(async () => {
-      const totalPunya = punyaEarned + offeringPunya;
+  };
+  
+  const handleChantingComplete = () => {
+    setShowChanting(false);
+    setChantingCompleted(true);
+    showMessage(`✨ Chanting completed! Your devotion has been heard by the divine.`);
+    
+    setTimeout(() => {
+      const offeringPunya = Math.floor(offeringAmount * 0.5);
+      completePujaAfterChanting(offeringAmount, offeringPunya);
+    }, 2000);
+  };
+  
+  const handleChantingExit = () => {
+    setShowChanting(false);
+    // Allow user to complete puja without chanting, but with reduced punya
+    showMessage(`Puja completed without chanting. May the divine still bless you.`);
+    
+    setTimeout(() => {
+      const offeringPunya = Math.floor(offeringAmount * 0.3); // Reduced punya for skipping chanting
+      completePujaAfterChanting(offeringAmount, offeringPunya);
+    }, 2000);
+  };
+  
+  const completePujaAfterChanting = async (amount: number, offeringPunya: number) => {
+      const newCompleted = new Set(completedSteps);
+      newCompleted.add('chadava');
+      if (chantingCompleted) {
+        newCompleted.add('chanting');
+      }
+      
+      const totalPunya = punyaEarned + offeringPunya + (chantingCompleted ? 100 : 0); // Bonus for chanting
       const result = {
         punyaEarned: totalPunya,
         stepsCompleted: Array.from(newCompleted),
@@ -392,7 +439,6 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
         setMessage(`❗ Puja completed but failed to save. You earned ${totalPunya} punya points!`);
         setShowCompletion(true);
       }
-    }, 2000);
   };
 
   const toggleAudio = () => {
@@ -440,6 +486,17 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
 
   return (
     <div className="h-screen w-screen overflow-hidden text-stone-800 flex flex-col bg-orange-50 relative">
+      
+      {/* Chanting Session Overlay */}
+      {showChanting && selectedChant && (
+        <div className="fixed inset-0 z-50">
+          <ChantingSession
+            chant={selectedChant}
+            onComplete={handleChantingComplete}
+            onExit={handleChantingExit}
+          />
+        </div>
+      )}
 
       {/* Audio Toggle */}
       <div className="fixed top-4 right-4 z-50">
@@ -488,6 +545,27 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
             <span className="text-blue-300 text-xs font-medium">
               Step {currentStepIndex + 1}/{PUJA_SEQUENCE.length}: {PUJA_SEQUENCE[currentStepIndex]?.name}
             </span>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="bg-black/40 px-4 py-2 rounded-lg border border-orange-500/50 backdrop-blur-md w-full max-w-xs">
+            <PujaProgressBar
+              steps={[
+                ...PUJA_SEQUENCE.map((step, index) => ({
+                  id: step.id,
+                  name: step.name,
+                  completed: completedSteps.has(step.id),
+                  current: index === currentStepIndex
+                })),
+                {
+                  id: 'chanting',
+                  name: 'Sacred Chanting',
+                  completed: chantingCompleted,
+                  current: showChanting
+                }
+              ]}
+              className="text-white"
+            />
           </div>
         </div>
         <div className="w-8"></div>
