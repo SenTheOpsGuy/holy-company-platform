@@ -6,6 +6,7 @@ import { X, Heart, Gift } from 'lucide-react';
 
 interface OfferingModalProps {
   deity: {
+    id: string;
     name: string;
     icon: string;
   };
@@ -33,14 +34,62 @@ export default function OfferingModal({ deity, onOfferingComplete }: OfferingMod
 
     setIsProcessing(true);
     
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    onOfferingComplete(amount);
-    setIsProcessing(false);
-    setIsOpen(false);
-    setSelectedAmount(null);
-    setCustomAmount('');
+    try {
+      // First test the API connection
+      console.log('Testing API connection...');
+      const testResponse = await fetch('/api/payments/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amount,
+          deityName: deity.id,
+          returnUrl: window.location.href
+        }),
+      });
+      
+      const testData = await testResponse.json();
+      console.log('Test API response:', testData);
+      
+      if (!testResponse.ok) {
+        throw new Error(`Test API failed: ${testData.error}`);
+      }
+      
+      // Now call the actual payment API
+      const response = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amount,
+          deityName: deity.id,
+          returnUrl: window.location.href
+        }),
+      });
+
+      const data = await response.json();
+      
+      console.log('Payment API response:', { status: response.status, data });
+      
+      if (response.ok && data.success) {
+        // Redirect to Cashfree payment page
+        window.location.href = data.paymentUrl;
+      } else {
+        console.error('Payment creation failed:', { 
+          status: response.status,
+          statusText: response.statusText,
+          data 
+        });
+        alert(`Payment gateway error: ${data.error || 'Unknown error'}. Please try again.`);
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Payment gateway error. Please try again.');
+      setIsProcessing(false);
+    }
   };
 
   return (

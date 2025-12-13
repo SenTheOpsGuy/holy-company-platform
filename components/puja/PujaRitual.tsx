@@ -304,6 +304,10 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
   };
 
   const handlePaymentClick = async (amount: number) => {
+    console.log('handlePaymentClick called with amount:', amount);
+    console.log('deity object:', deity);
+    console.log('deity.id:', deity?.id);
+    
     if (amount === 0) {
       // Handle free offering
       handleOfferingComplete(0);
@@ -314,6 +318,7 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
     setPaymentError('');
 
     try {
+      console.log('About to make payment API call...');
       const response = await fetch('/api/payments/create', {
         method: 'POST',
         headers: {
@@ -321,14 +326,16 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
         },
         body: JSON.stringify({
           amount: amount,
-          deityName: deity.name,
+          deityName: deity.id,
           returnUrl: `${window.location.origin}/puja/${deity.id}/payment-success`
         }),
       });
 
       const data = await response.json();
+      console.log('Payment API response:', data);
 
       if (data.success) {
+        console.log('Redirecting to payment URL:', data.paymentUrl);
         // Redirect to payment page
         window.location.href = data.paymentUrl;
       } else {
@@ -713,7 +720,10 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
               {[11, 21, 51, 101].map((amount) => (
                 <button
                   key={amount}
-                  onClick={() => handlePaymentClick(amount)}
+                  onClick={() => {
+                    console.log('Offering button clicked for amount:', amount);
+                    handlePaymentClick(amount);
+                  }}
                   disabled={paymentLoading}
                   className="p-3 border border-orange-200 rounded-lg hover:bg-orange-50 hover:border-orange-500 transition text-center group bg-white font-bold text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >

@@ -196,7 +196,7 @@ export default function ChantingSession({ chant, onComplete, onExit }: ChantingS
   };
 
   const getChantingPercentage = () => {
-    if (chant.duration - timeRemaining === 0) return 0;
+    if (chant.duration - timeRemaining === 0) return "0.0";
     return ((chantingTime / (chant.duration - timeRemaining)) * 100).toFixed(1);
   };
 

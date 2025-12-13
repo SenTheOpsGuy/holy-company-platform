@@ -1,7 +1,9 @@
+export type ChantLevel = 'basic' | 'intermediate' | 'advanced';
+
 export interface Chant {
   id: string;
   deityId: string;
-  level: 'basic' | 'intermediate' | 'advanced';
+  level: ChantLevel;
   duration: number; // in seconds
   text: string;
   transliteration: string;

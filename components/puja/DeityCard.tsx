@@ -16,7 +16,7 @@ interface DeityCardProps {
 }
 
 export default function DeityCard({ deity, userPujaCount }: DeityCardProps) {
-  const pujaUrl = `/puja/${deity.name.toLowerCase().replace(/\s+/g, '-')}`;
+  const pujaUrl = `/puja/${deity.id}`;
   
   return (
     <div className="group hover:scale-105 transition-transform duration-300">
