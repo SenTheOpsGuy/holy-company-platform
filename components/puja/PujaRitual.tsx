@@ -308,6 +308,14 @@ export default function PujaRitual({ deity, user, offeringTiers }: PujaRitualPro
     console.log('deity object:', deity);
     console.log('deity.id:', deity?.id);
     
+    // Safety check: ensure deity and deity.id are valid
+    if (!deity || !deity.id) {
+      const errorMsg = `Invalid deity data: deity=${!!deity}, deity.id=${deity?.id}`;
+      console.error(errorMsg);
+      setPaymentError(errorMsg);
+      return;
+    }
+    
     if (amount === 0) {
       // Handle free offering
       handleOfferingComplete(0);
